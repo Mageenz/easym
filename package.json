@@ -1,0 +1,43 @@
+{
+  "name": "easym",
+  "version": "1.0.0",
+  "description": "可拖拽形成后页面",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config ./build/webpack.config.js",
+    "dev": "webpack-dev-server --config ./build/webpack.config.js --open",
+    "start": "node ./bin/www.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "后台，拖拽"
+  ],
+  "author": "magee",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.3",
+    "element-ui": "^2.4.5",
+    "express": "^4.16.3",
+    "mongoose": "^5.2.8",
+    "morgan": "^1.9.0",
+    "serve-favicon": "^2.5.0",
+    "vue": "^2.5.17",
+    "vue-router": "^3.0.1",
+    "vuedraggable": "^2.16.0",
+    "zepto": "^1.2.0"
+  },
+  "devDependencies": {
+    "css-loader": "^1.0.0",
+    "eslint": "^5.3.0",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^0.21.0",
+    "url-loader": "^1.0.1",
+    "vue-loader": "^15.2.7",
+    "vue-template-compiler": "^2.5.17",
+    "webpack": "^4.16.5",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.5"
+  }
+}
