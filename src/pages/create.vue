@@ -1,5 +1,5 @@
 <template>
-  <div class="container" @click="cancelEdit">
+  <div class="container" @click="cancelEdit" v-loading='loading'>
     <div class="topwrap">
       <el-row>
         <el-col :span="8" :offset="8">
@@ -9,6 +9,7 @@
         <el-col :span="8">
           <el-button type="primary" size="small" @click="savePage">保存</el-button>
           <el-button type="success" size="small">预览</el-button>
+          <el-button size="small" icon="el-icon-arrow-left" @click="goBack">返回</el-button>
         </el-col>
       </el-row>
     </div>
@@ -26,7 +27,7 @@
         <div class="page">
             <el-form label-position="right" label-width="80px">
               <draggable v-model="droppedComponents" :options="options2" class="dragwrap">
-                <div v-for="item in droppedComponents" :key="item.id" class="dropped-component" @click.stop="selectCompoent(item, $event)">
+                <div v-for="(item, index) in droppedComponents" :key="item.id" class="dropped-component" @click.stop="selectCompoent(item, index, $event)">
                   <component :is="item.componentName" :data="item"></component>
                 </div>
                 <div v-if="!droppedComponents.length" class="tip">从左边拖拽控件到这里吧</div>
@@ -38,7 +39,7 @@
       <div class="fakewrap"></div>
 
       <transition name="slide">
-        <div v-show="isComponentEditbarShow" class="component-editbar" @click.stop>
+        <div v-show="isComponentEditbarShow" class="component-editbar" @click.stop @keyup.stop>
           <div class="component-editcontainer">
             <component :is="editComponent.editComponentName" :data="editComponent"></component>
           </div>
@@ -61,13 +62,19 @@ import emBreadcrumb from '../components/emBreadcrumb.vue';
 import emEditInput from '../components/emEditInput.vue';
 import emEditSelect from '../components/emEditSelect.vue';
 import emEditRadio from '../components/emEditRadio.vue';
+import emEditBreadcrumb from '../components/emEditBreadcrumb.vue';
 
 import utils from '../utils/utils.js';
 
 export default {
   data() {
     return {
+      _id: '',
+      loading: false,
+
       editComponent: {},
+      editComponentIndex: '',
+
       isComponentEditbarShow: false,
 
       clone(e) {
@@ -101,7 +108,9 @@ export default {
       components: [],
       page: [{
         name: '面包屑导航',
-        componentName: 'emBreadcrumb'
+        componentName: 'emBreadcrumb',
+        editComponentName: 'emEditBreadcrumb',
+        breadList: [{name: '首页', url: '/index.html'}]
       }],
       form: [{
         name: 'input',
@@ -141,35 +150,83 @@ export default {
 
     emEditInput,
     emEditSelect,
-    emEditRadio
+    emEditRadio,
+    emEditBreadcrumb
   },
   methods: {
+    goBack() {
+      this.$confirm('返回的话将不会保存目前的改动，是否继续？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$router.go(-1)
+      })
+    },
+    getDetal() {
+      this._id = this.$route.query._id;
+      this.$http.get(`/api/page/${this._id}`).then(res => {
+        this.droppedComponents = JSON.parse(res.data.data)
+      })
+    },
     savePage() {
-      this.$http.post('/api/page', {
-        name: ''
+      this.$http.put(`/api/page/${this._id}`, {
+        data: this.droppedComponents
+      }).then(res => {
+        this.$message({
+          type: 'success',
+          duration: 1000,
+          message: '操作成功',
+          onClose: () => {
+            this.$router.go(-1)
+          }
+        })
       })
     },
     changeCategory(item) {
       this.components = this[item.name]
     },
-    selectCompoent(data, e) {
+    // 选中组件并且删除
+    deleteComponent(index) {
+      console.log('11111')
+      this.droppedComponents.splice(index, 1)
+    },
+    // 选择组件进行编辑
+    selectCompoent(data, index, e) {
       let el = e.currentTarget;
       utils.addClass(el, 'selected');
       utils.removeClass(utils.siblings(el), 'selected');
 
       this.isComponentEditbarShow = true;
-      this.editComponent = data;
+      this.editComponentIndex = index
+      this.editComponent = data
     },
     cancelEdit() {
       if(this.isComponentEditbarShow) {
-        this.isComponentEditbarShow = false
-        this.editComponent = {}
-        utils.removeClass(utils.selector('.dropped-component'), 'selected');
+        this.clear()
       }
+    },
+    clear() {
+      this.isComponentEditbarShow = false
+      this.editComponentIndex = ''
+      this.editComponent = {}
+      utils.removeClass(utils.selector('.dropped-component'), 'selected')
     }
   },
   created() {
     this.components = this.form
+    this.getDetal()
+
+    document.addEventListener('keyup', deleteComponent.bind(this))
+  }
+}
+
+const deleteComponent = function(e) {
+  let editComponentIndex = this.editComponentIndex
+
+  if(editComponentIndex !== '' && e.code === 'Backspace') {
+    this.clear()
+    this.droppedComponents.splice(editComponentIndex, 1)
   }
 }
 </script>
@@ -288,6 +345,9 @@ export default {
 }
 .component-editcontainer {
   padding: 10px 15px;
+}
+.component-editbar >>> .el-form-item__label {
+  color: #aeaeae;
 }
 </style>
 

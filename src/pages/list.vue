@@ -20,8 +20,8 @@
       </el-table>
     </div>
     <el-dialog :visible.sync="isDialogShow" width="30%" title="创建页面" @closed="closed">
-      <el-form label-width="100px" label-position="top">
-        <el-form-item label="页面名称：">
+      <el-form label-width="100px" label-position="top" :rules="rules" :model="form" ref="form">
+        <el-form-item label="页面名称：" prop="name">
           <el-input placeholder="请输入页面名称" v-model="form.name"></el-input>
         </el-form-item>
         <el-form-item label="页面描述：">
@@ -40,6 +40,11 @@
 export default {
   data() {
     return {
+      rules: {
+        name: [
+          {required: true, message: '请输入页面名称', trigger: 'blur'}
+        ]
+      },
       list: [],
       isLoading: false,
       isDialogShow: false,
@@ -61,7 +66,7 @@ export default {
       this.$router.push({
         name: 'create',
         query: {
-          id: item._id
+          _id: item._id
         }
       })
     },
@@ -80,17 +85,21 @@ export default {
       })
     },
     savePage() {
-      this.isSaving = true
-      this.$http.post('/api/page', this.form).then(res => {
-        if(res.data._id) {
-          this.$message({
-            type: 'success',
-            duration: 1000,
-            message: '保存成功',
-            onClose: () => {
-              this.isDialogShow = false
-              this.isSaving = false
-              this.getList()
+      this.$refs.form.validate(valid => {
+        if(valid) {
+          this.isSaving = true
+          this.$http.post('/api/page', this.form).then(res => {
+            if(res.data._id) {
+              this.$message({
+                type: 'success',
+                duration: 1000,
+                message: '保存成功',
+                onClose: () => {
+                  this.isDialogShow = false
+                  this.isSaving = false
+                  this.getList()
+                }
+              })
             }
           })
         }
