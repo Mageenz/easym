@@ -1,6 +1,6 @@
 ### easym
 
-- 由于公司后台界面相似度较高，所以制作了一个小工具，目的很简单少敲代码啦。目前只能简单的拖拽形成页面，逻辑层面还没想好该怎么加入。
+- 由于公司后台界面相似度较高，所以制作了一个小工具，目的很简单少敲代码啦。目前只能简单的拖拽形成页面，逻辑层面还没想好该怎么加入
 
 ### 发装和开发
 
@@ -11,5 +11,5 @@
 
 ### 依赖
 
-- [element-ui](http://element-cn.eleme.io/#/zh-CN)
+- [element-ui](http://element-cn.eleme.io/#/zh-CN)
 - [Sortable](https://github.com/RubaXa/Sortable)
