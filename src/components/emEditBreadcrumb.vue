@@ -17,6 +17,7 @@
 
 <script>
 export default {
+  name: 'emEditBreadcrumb',
   props: ['data'],
   methods: {
     addItem() {

@@ -33,6 +33,14 @@
               <draggable v-model="droppedWraps" :options="droppedWrapsOptions" class="dragwrap">
                 <el-row class="drap-row" v-for="(wrap, wrapIndex) in droppedWraps" :key="wrapIndex">
                   <span class="drag-handle"></span>
+                  <el-popover placement="right" width="160" v-model="wrap.popoverVisible">
+                    <p>确定删除该区块吗？</p>
+                    <div style="text-align: right; margin: 0">
+                      <el-button size="mini" type="text" @click="wrap.popoverVisible = false">取消</el-button>
+                      <el-button type="primary" size="mini" @click="deleteWrap(wrapIndex)">确定</el-button>
+                    </div>
+                    <span class="el-icon-remove remove-btn" slot="reference"></span>
+                  </el-popover>
                   <el-col :span="24/wrap.columns" v-for="(components, componentsIndex) in wrap.components" :key="componentsIndex">
                     <draggable v-model="components.components" :options="droppedComponentsOptions" class="dropped-wrap">
                       <div v-for="(item, index) in components.components" class="dropped-component" @click.stop="selectCompoent(item, wrapIndex, componentsIndex,  index, $event)" :key="index">
@@ -42,7 +50,14 @@
                         </div>
                         <div class="mask flex">
                           <div class="flex-1 tr">
-                            <el-button type="danger" icon="el-icon-minus" size="mini" circle @click.stop="deleteComponent(wrapIndex, componentsIndex, index)"></el-button>
+                            <el-popover placement="right" width="160" v-model="item.popoverVisible">
+                              <p>确定删除该组件吗？</p>
+                              <div style="text-align: right; margin: 0">
+                                <el-button size="mini" type="text" @click="item.popoverVisible = false">取消</el-button>
+                                <el-button type="primary" size="mini" @click="item.popoverVisible = false" @click.stop="deleteComponent(wrapIndex, componentsIndex, index)">确定</el-button>
+                              </div>
+                              <span class="el-icon-remove" slot="reference" @click.stop></span>
+                            </el-popover>
                           </div>
                         </div>
                       </div>
@@ -84,6 +99,7 @@ export default {
           pull: false,
           put: true
         },
+        animation: 150,
         handle: '.drag-handle'
       },
       droppedWraps: [],
@@ -118,6 +134,7 @@ export default {
 
       clone(e) {
         let copy = JSON.parse(JSON.stringify(e));
+        copy.popoverVisible = false;
         return copy;
       },
       componentsOptions: {
@@ -136,7 +153,18 @@ export default {
         },
       },
       components: [{
-        name: '面包屑导航',
+        name: 'table',
+        componentName: 'emTable',
+        editComponentName: 'emEditTable',
+        columnList: [{
+          label: '表头1',
+          prop: 'prop1'
+        }, {
+          label: '表头2',
+          prop: 'prop2'
+        }]
+      }, {
+        name: 'breadcrumb',
         componentName: 'emBreadcrumb',
         editComponentName: 'emEditBreadcrumb',
         breadList: [{name: '首页', url: '/index.html'}]
@@ -208,6 +236,10 @@ export default {
     changeCategory(item) {
       this.components = this[item.name]
     },
+    // 删除区块
+    deleteWrap(wrapIndex) {
+      this.droppedWraps.splice(wrapIndex, 1)
+    },
     // 删除组件
     deleteComponent(wrapIndex, componentsIndex, index) {
       this.droppedWraps.forEach((wrap, wIndex) => {
@@ -278,11 +310,23 @@ const deleteComponent = function(e) {
 .flex-1 {
   flex: 1;
 }
+.el-icon-remove {
+  color: #f56c6c;
+  cursor: pointer;
+}
+.el-icon-remove:hover {
+  color: #f87e7e;
+}
+.el-icon-remove.remove-btn {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
 .drag-handle {
   display: block;
   position: absolute;
-  top: 0;
-  right: 5px;
+  top: 4px;
+  right: 35px;
   width: 20px;
   height: 20px;
   background-image: url(../assets/images/drag.png);
@@ -299,6 +343,7 @@ const deleteComponent = function(e) {
 .drap-row.el-row {
   border: 1px #e5e5e5 dashed;
   margin-bottom: 15px;
+  background-color: rgba(34, 34, 34, 0.03);
 }
 
 .drap-row.el-row .el-col {
@@ -396,9 +441,10 @@ const deleteComponent = function(e) {
 .dropped-component {
   border-radius: 3px;
   cursor: pointer;
-  padding: 10px;
+  padding: 15px 10px;
   margin-bottom: 10px;
   position: relative;
+  background-color: #fff;
 }
 .dropped-component >>> .el-form-item {
   margin-bottom: 0;

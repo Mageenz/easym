@@ -4,11 +4,13 @@ import emSelect from '../components/emSelect.vue';
 import emRadio from '../components/emRadio.vue';
 import emButton from '../components/emButton.vue';
 import emBreadcrumb from '../components/emBreadcrumb.vue';
+import emTable from '../components/emTable.vue';
 
 import emEditInput from '../components/emEditInput.vue';
 import emEditSelect from '../components/emEditSelect.vue';
 import emEditRadio from '../components/emEditRadio.vue';
 import emEditBreadcrumb from '../components/emEditBreadcrumb.vue';
+import emEditTable from '../components/emEditTable.vue';
 
 export default {
   components: {
@@ -21,6 +23,8 @@ export default {
     emEditInput,
     emEditSelect,
     emEditRadio,
-    emEditBreadcrumb
+    emEditBreadcrumb,
+    emTable,
+    emEditTable
   }
 }
