@@ -2,35 +2,53 @@
   <div class="container" @click="cancelEdit" v-loading='loading'>
     <div class="topwrap">
       <el-row>
-        <el-col :span="8" :offset="8">
-          <el-button type="default" size="small" v-for='item in categories' :key='item.label' @click='changeCategory(item)'>{{item.label}}</el-button>
-          <!-- <el-button type="default" size="small">页面相关</el-button> -->
-        </el-col>
-        <el-col :span="8">
+        <el-col :span="8" :offset="16">
           <el-button type="primary" size="small" @click="savePage">保存</el-button>
           <el-button type="success" size="small">预览</el-button>
-          <el-button size="small" icon="el-icon-arrow-left" @click="goBack">返回</el-button>
+          <el-button size="small" @click="goBack">返回</el-button>
         </el-col>
       </el-row>
     </div>
 
     <div class="mainwrap">
-      
       <!-- 左侧组件列表 -->
       <div class="leftwrap">
-        <draggable v-model="components" :options="options1" :clone="clone">
-          <div class="component" v-for="item in components" :key="item.name">{{item.name}}</div>
-        </draggable>
+        <el-tabs v-model="activeName">
+          <el-tab-pane label="布局" name="layout">
+            <draggable v-model="wraps" :options="wrapsOptions" :clone="clone">
+              <div class="component" v-for="(item, index) in wraps" :key="index">{{item.columns}} 列</div>
+            </draggable>
+          </el-tab-pane>
+          <el-tab-pane label="组件" name="components">
+            <draggable v-model="components" :options="componentsOptions" :clone="clone">
+              <div class="component" v-for="item in components" :key="item.name">{{item.name}}</div>
+            </draggable>
+          </el-tab-pane>
+        </el-tabs>
       </div>
 
       <div class="rightwrap">
         <div class="page">
             <el-form label-position="right" label-width="80px">
-              <draggable v-model="droppedComponents" :options="options2" class="dragwrap">
-                <div v-for="(item, index) in droppedComponents" :key="item.id" class="dropped-component" @click.stop="selectCompoent(item, index, $event)">
-                  <component :is="item.componentName" :data="item"></component>
-                </div>
-                <div v-if="!droppedComponents.length" class="tip">从左边拖拽控件到这里吧</div>
+              <draggable v-model="droppedWraps" :options="droppedWrapsOptions" class="dragwrap">
+                <el-row class="drap-row" v-for="(wrap, wrapIndex) in droppedWraps" :key="wrapIndex">
+                  <span class="drag-handle"></span>
+                  <el-col :span="24/wrap.columns" v-for="(components, componentsIndex) in wrap.components" :key="componentsIndex">
+                    <draggable v-model="components.components" :options="droppedComponentsOptions" class="dropped-wrap">
+                      <div v-for="(item, index) in components.components" class="dropped-component" @click.stop="selectCompoent(item, wrapIndex, componentsIndex,  index, $event)" :key="index">
+                        <div class="flex">
+                          <div class="flex-1 mr15"><component :is="item.componentName" :data="item"></component></div>
+                          <div class="delete-btn-wrap"></div>
+                        </div>
+                        <div class="mask flex">
+                          <div class="flex-1 tr">
+                            <el-button type="danger" icon="el-icon-minus" size="mini" circle @click.stop="deleteComponent(wrapIndex, componentsIndex, index)"></el-button>
+                          </div>
+                        </div>
+                      </div>
+                    </draggable>
+                  </el-col>
+                </el-row>
               </draggable>
             </el-form>
         </div>
@@ -52,23 +70,44 @@
 </template>
 
 <script>
-import draggable from 'vuedraggable';
-import emInput from '../components/emInput.vue';
-import emSelect from '../components/emSelect.vue';
-import emRadio from '../components/emRadio.vue';
-import emButton from '../components/emButton.vue';
-import emBreadcrumb from '../components/emBreadcrumb.vue';
-
-import emEditInput from '../components/emEditInput.vue';
-import emEditSelect from '../components/emEditSelect.vue';
-import emEditRadio from '../components/emEditRadio.vue';
-import emEditBreadcrumb from '../components/emEditBreadcrumb.vue';
-
+import mixin from '../utils/mixin.js';
 import utils from '../utils/utils.js';
+
+import emCollapse from '../components/emCollapse.vue';
 
 export default {
   data() {
     return {
+      droppedWrapsOptions: {
+        group: {
+          name: 'wraps',
+          pull: false,
+          put: true
+        },
+        handle: '.drag-handle'
+      },
+      droppedWraps: [],
+
+      activeName: 'layout',
+      wraps: [{
+        columns: 1,
+        components: [{components: []}]
+      }, {
+        columns: 2,
+        components: [{components: []}, {components: []}]
+      }, {
+        columns: 3,
+        components: [{components: []}, {components: []}, {components: []}]
+      }],
+      wrapsOptions: {
+        group: {
+          name: 'wraps',
+          pull: 'clone',
+          put: false
+        },
+        sort: false
+      },
+
       _id: '',
       loading: false,
 
@@ -78,12 +117,10 @@ export default {
       isComponentEditbarShow: false,
 
       clone(e) {
-        console.log(e);
         let copy = JSON.parse(JSON.stringify(e));
-        copy.id = new Date().getTime()
         return copy;
       },
-      options1: {
+      componentsOptions: {
         group: {
           name: 'components',
           pull: 'clone',
@@ -91,28 +128,19 @@ export default {
         },
         sort: false
       },
-      options2: {
+      droppedComponentsOptions: {
         group: {
           name: 'components',
-          pull: false,
+          pull: true,
           put: true
         },
       },
-      categories: [{
-        label: '表单控件',
-        name: 'form'
-      }, {
-        label: '页面',
-        name: 'page'
-      }],
-      components: [],
-      page: [{
+      components: [{
         name: '面包屑导航',
         componentName: 'emBreadcrumb',
         editComponentName: 'emEditBreadcrumb',
         breadList: [{name: '首页', url: '/index.html'}]
-      }],
-      form: [{
+      }, {
         name: 'input',
         labelWidth: '80',
         disabled: false,
@@ -141,18 +169,9 @@ export default {
     }
   },
   components: {
-    draggable,
-    emInput,
-    emSelect,
-    emRadio,
-    emButton,
-    emBreadcrumb,
-
-    emEditInput,
-    emEditSelect,
-    emEditRadio,
-    emEditBreadcrumb
+    emCollapse
   },
+  mixins: [mixin],
   methods: {
     goBack() {
       this.$confirm('返回的话将不会保存目前的改动，是否继续？', '提示', {
@@ -166,12 +185,13 @@ export default {
     getDetal() {
       this._id = this.$route.query._id;
       this.$http.get(`/api/page/${this._id}`).then(res => {
-        this.droppedComponents = JSON.parse(res.data.data)
+        this.droppedWraps = JSON.parse(res.data.data)
       })
     },
     savePage() {
+      this.loading = true
       this.$http.put(`/api/page/${this._id}`, {
-        data: this.droppedComponents
+        data: this.droppedWraps
       }).then(res => {
         this.$message({
           type: 'success',
@@ -181,24 +201,34 @@ export default {
             this.$router.go(-1)
           }
         })
+
+        this.loading = false
       })
     },
     changeCategory(item) {
       this.components = this[item.name]
     },
-    // 选中组件并且删除
-    deleteComponent(index) {
-      console.log('11111')
-      this.droppedComponents.splice(index, 1)
+    // 删除组件
+    deleteComponent(wrapIndex, componentsIndex, index) {
+      this.droppedWraps.forEach((wrap, wIndex) => {
+        if (wrapIndex === wIndex) {
+          wrap.components.forEach((components, cIndex) => {
+            if (componentsIndex === cIndex) {
+              components.components.splice(index, 1)
+            }
+          })
+        }
+      })
+      this.editComponent = {}
+      this.isComponentEditbarShow = false
     },
     // 选择组件进行编辑
-    selectCompoent(data, index, e) {
+    selectCompoent(data, wrapIndex, componentsIndex, index, e) {
       let el = e.currentTarget;
+      utils.removeClass(document.querySelectorAll('.dropped-component'), 'selected');
       utils.addClass(el, 'selected');
-      utils.removeClass(utils.siblings(el), 'selected');
 
-      this.isComponentEditbarShow = true;
-      this.editComponentIndex = index
+      this.isComponentEditbarShow = true // 显示右侧菜单栏
       this.editComponent = data
     },
     cancelEdit() {
@@ -214,13 +244,16 @@ export default {
     }
   },
   created() {
-    this.components = this.form
     this.getDetal()
 
     document.addEventListener('keyup', deleteComponent.bind(this))
+  },
+  destroyed() {
+    document.removeEventListener('keyup', deleteComponent)
   }
 }
 
+// delete键删除组件
 const deleteComponent = function(e) {
   let editComponentIndex = this.editComponentIndex
 
@@ -232,6 +265,58 @@ const deleteComponent = function(e) {
 </script>
 
 <style scoped>
+.tr {
+  text-align: right;
+}
+.mr15 {
+  margin-right: 15px;
+}
+.flex{
+  display: flex;
+  align-items: center;
+}
+.flex-1 {
+  flex: 1;
+}
+.drag-handle {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  background-image: url(../assets/images/drag.png);
+  background-size: contain;
+  cursor: move;
+}
+.drag-handle:hover {
+  background-image: url(../assets/images/drag-hover.png);
+}
+.dropped-wrap {
+  min-height: 40px;
+}
+
+.drap-row.el-row {
+  border: 1px #e5e5e5 dashed;
+  margin-bottom: 15px;
+}
+
+.drap-row.el-row .el-col {
+    border-right: 1px #e5e5e5 dashed;
+    padding: 30px 15px 15px 15px;
+}
+.drap-row.el-row .el-col:last-child {
+  border-right: 0;
+}
+.drag-item {
+  width: 100px;
+  border: 1px #fff solid;
+  height: 30px;
+  float: left;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+
 .container {
   height: 100%;
   display: flex;
@@ -253,10 +338,18 @@ const deleteComponent = function(e) {
   position: relative;
 }
 .leftwrap {
-  width: 200px;
+  width: 260px;
   height: 100%;
   overflow: auto;
   background-color: #484848;
+  padding: 0 10px 0 10px;
+  box-sizing: border-box;
+}
+.leftwrap >>> .el-tabs__item {
+  color: #fff;
+}
+.leftwrap >>> .el-tabs__item.is-active {
+  color: #409EFF;
 }
 .rightwrap {
   flex: 1;
@@ -269,26 +362,31 @@ const deleteComponent = function(e) {
   background-color: #222;
 }
 .page {
-  width: 60%;
+  width: 80%;
   /* min-height: 800px; */
   border-radius: 3px;
   background-color: #fff;
   margin: 30px auto;
-  padding: 15px;
+  padding: 10px;
 }
 
 .component {
   height: 40px;
   line-height: 40px;
-  cursor: pointer;
+  cursor: move;
   padding: 0 10px;
   color: #222;
   background-color: #fff;
-  margin: 15px;
-  border-radius: 3px;
-  border: 1px #ccc solid;
+  margin-bottom: 10px;
   font-size: 14px;
 }
+.component.sortable-drag {
+  box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.2);
+}
+.component.sortable-ghost {
+  /* border: 1px dashed #ccc; */
+}
+
 .tip {
   color: #ccc;
   text-align: center;
@@ -296,27 +394,42 @@ const deleteComponent = function(e) {
   padding-top: 100px;
 }
 .dropped-component {
-  border: 2px dashed #fff;
   border-radius: 3px;
   cursor: pointer;
   padding: 10px;
   margin-bottom: 10px;
+  position: relative;
 }
 .dropped-component >>> .el-form-item {
   margin-bottom: 0;
 }
-.dropped-component.selected{
-  border: 2px #ccc dashed;
+.dropped-component.selected .mask{
+  border: 1px #9c5454 dashed;
 }
-.dropped-component * {
-  cursor: pointer;
+
+.dropped-component .delete-btn-wrap {
+  width: 50px;
 }
+
 .dropped-component:last-child {
   margin-bottom: 0;
 }
-.dropped-component:hover {
-  border: 2px dashed #ccc;
+.dropped-component .mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background-color: transparent;
+  border: 1px #fff solid;
+  padding-right: 15px;
+  box-sizing: border-box;
 }
+.dropped-component .mask:hover {
+  border: 1px #9c5454 dashed;
+}
+
 .dragwrap {
   min-height: 400px;
 }
@@ -344,7 +457,7 @@ const deleteComponent = function(e) {
   color: #a0a0a0;
 }
 .component-editcontainer {
-  padding: 10px 15px;
+  padding: 10px;
 }
 .component-editbar >>> .el-form-item__label {
   color: #aeaeae;

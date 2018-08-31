@@ -24,7 +24,7 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
       }, {
-        test: /\.ttf|woff$/,
+        test: /\.ttf|woff|png|jpg$/,
         use: ['url-loader']
       }, {
         test: /\.vue$/,

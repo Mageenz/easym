@@ -1,11 +1,15 @@
-### 项目名称
+## easym
 
-- easym
+### 简介
 
-### 功能
+- 由于公司后台界面相似度较高，所以想制作一个工具，目的很简单少敲代码。
 
-- 可通过拖拽表单控件形成后台页面
+### 开发环境
 
-### 版本
+- MEVN(mongodb,express,vue,nodejs)
 
-- v1.0
+### 安装
+
+- npm install
+- npm run start
+- npm run dev  
